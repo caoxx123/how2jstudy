@@ -1,0 +1,175 @@
+lamada表达式即就是把匿名方法作为参数传递
+弊端：
+Lambda表达式虽然带来了代码的简洁，但是也有其局限性。
+1. 可读性差，与啰嗦的但是清晰的匿名类代码结构比较起来，Lambda表达式一旦变得比较长，就难以理解
+2. 不便于调试，很难在Lambda表达式中增加调试信息，比如日志
+3. 版本支持，Lambda表达式在JDK8版本中才开始支持，如果系统使用的是以前的版本，考虑系统的稳定性等原因，而不愿意升级，那么就无法使用。
+//匿名类的方式
+package lambda;
+
+import charactor.Hero;
+
+public interface HeroChecker {
+    public boolean test(Hero h);
+}
+
+package lambda;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import charactor.Hero;
+
+public class TestLambda {
+    public static void main(String[] args) {
+        Random r = new Random();
+        List<Hero> heros = new ArrayList<Hero>();
+        for (int i = 0; i < 5; i++) {
+            heros.add(new Hero("hero " + i, r.nextInt(1000), r.nextInt(100)));
+        }
+        System.out.println("初始化后的集合：");
+        System.out.println(heros);
+        System.out.println("使用匿名类的方式，筛选出 hp>100 && damange<50的英雄");
+        HeroChecker checker = new HeroChecker() {
+            @Override
+            public boolean test(Hero h) {
+                return (h.hp>100 && h.damage<50);
+            }
+        };
+
+        filter(heros,checker);
+    }
+
+    private static void filter(List<Hero> heros,HeroChecker checker) {
+        for (Hero hero : heros) {
+            if(checker.test(hero))
+                System.out.print(hero);
+        }
+    }
+
+}
+
+//lamada表达式的方式
+package lambda;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import charactor.Hero;
+
+public class TestLamdba {
+    public static void main(String[] args) {
+        Random r = new Random();
+        List<Hero> heros = new ArrayList<Hero>();
+        for (int i = 0; i < 5; i++) {
+            heros.add(new Hero("hero " + i, r.nextInt(1000), r.nextInt(100)));
+        }
+        System.out.println("初始化后的集合：");
+        System.out.println(heros);
+        System.out.println("使用Lamdba的方式，筛选出 hp>100 && damange<50的英雄");
+        filter(heros,h->h.hp>100 && h.damage<50);
+    }
+
+    private static void filter(List<Hero> heros,HeroChecker checker) {
+        for (Hero hero : heros) {
+            if(checker.test(hero))
+                System.out.print(hero);
+        }
+    }
+
+}
+
+引用静态方法：
+首先为TestLambda添加一个静态方法：
+
+public static boolean testHero(Hero h) {
+   return h.hp>100 && h.damage<50;
+}
+
+
+Lambda表达式：
+
+filter(heros, h->h.hp>100 && h.damage<50);
+
+
+在Lambda表达式中调用这个静态方法：
+
+filter(heros, h -> TestLambda.testHero(h) );
+
+
+调用静态方法还可以改写为：
+
+filter(heros, TestLambda::testHero);
+
+
+引用对象方法：
+与引用静态方法很类似，只是传递方法的时候，需要一个对象的存在
+TestLambda testLambda = new TestLambda();
+filter(heros, testLambda::testHero);
+
+
+引用容器方法：
+首先为Hero添加一个方法
+
+public boolean matched(){
+   return this.hp>100 && this.damage<50;
+}
+
+
+使用Lambda表达式
+
+filter(heros,h-> h.hp>100 && h.damage<50 );
+
+
+在Lambda表达式中调用容器中的对象Hero的方法matched
+
+filter(heros,h-> h.matched() );
+
+
+matched恰好就是容器中的对象Hero的方法，那就可以进一步改写为
+
+filter(heros, Hero::matched);
+
+
+这种方式就叫做引用容器中的对象的方法
+
+
+引用构造器方法：
+有的接口中的方法会返回一个对象，比如java.util.function.Supplier提供
+了一个get方法，返回一个对象。
+
+public interface Supplier<T> {
+    T get();
+}
+
+
+设计一个方法，参数是这个接口
+
+public static List getList(Supplier<List> s){
+  return s.get();
+}
+
+
+为了调用这个方法，有3种方式
+第一种匿名类：
+
+Supplier<List> s = new Supplier<List>() {
+	public List get() {
+		return new ArrayList();
+	}
+};
+List list1 = getList(s);
+
+
+
+第二种：Lambda表达式
+
+List list2 = getList(()->new ArrayList());
+
+
+
+第三种：引用构造器
+
+List list3 = getList(ArrayList::new);

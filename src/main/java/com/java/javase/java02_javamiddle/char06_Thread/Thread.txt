@@ -1,0 +1,140 @@
+创建线程的三种方法：
+多线程即在同一时间，可以做多件事情。
+创建多线程有3种方式，分别是继承线程类,实现Runnable接口,匿名类
+注： 启动线程是start()方法，run()并不能启动一个新的线程
+
+线程和进程的区别：
+进程：启动一个LOL.exe就叫一个进程。 接着又启动一个DOTA.exe，这叫两个进程。
+线程：线程是在进程内部同时做的事情，比如在LOL里，有很多事情要同时做，
+比如"盖伦” 击杀“提莫”，同时“赏金猎人”又在击杀“盲僧”，这就是由多线程来实现的。
+
+1、继承Thread类，重写run方法
+2、实现Runnable接口，实现run方法
+创建类Battle，实现Runnable接口
+启动的时候，首先创建一个Battle对象，然后再根据该battle对象创建一个线程对象，并启动
+Battle battle1 = new Battle(gareen,teemo);
+new Thread(battle1).start();
+3、匿名类
+Thread t1= new Thread(){
+            public void run(){
+                //匿名类中用到外部的局部变量teemo，必须把teemo声明为final
+                //但是在JDK7以后，就不是必须加final的了
+                while(!teemo.isDead()){
+                    gareen.attackHero(teemo);
+                }
+            }
+        };
+线程的常用方法：
+sleep	当前线程暂停
+join	加入到当前线程中
+首先解释一下主线程的概念
+所有进程，至少会有一个线程即主线程，即main方法开始执行，就会有一个看不见的主线程存在。
+在42行执行t.join，即表明在主线程中加入该线程。
+主线程会等待该线程结束完毕， 才会往下运行
+            //t1线程加入到main线程中来，只有t1线程运行结束，才会继续往下走
+            t1.join();
+setPriority	线程优先级
+当线程处于竞争关系的时候，优先级高的线程会有更大的几率获得CPU资源
+yield	临时暂停
+当前线程，临时暂停，使得其他线程可以有更多的机会占用CPU资源
+setDaemon	守护线程
+守护线程的概念是： 当一个进程里，所有的线程都是守护线程的时候，结束当前进程。
+就好像一个公司有销售部，生产部这些和业务挂钩的部门。
+除此之外，还有后勤，行政等这些支持部门。
+如果一家公司销售部，生产部都解散了，那么只剩下后勤和行政，那么这家公司也可以解散了。
+守护线程就相当于那些支持部门，如果一个进程只剩下守护线程，那么进程就会自动结束。
+守护线程通常会被用来做日志，性能统计等工作。\
+
+线程池：
+每一个线程的启动和结束都是比较消耗时间和占用资源的。
+如果在系统中用到了很多的线程，大量的启动和结束动作会导致系统的性能变卡，响应变慢。
+为了解决这个问题，引入线程池这种设计思想。
+线程池的模式很像生产者消费者模式，消费的对象是一个一个的能够运行的任务
+
+JAVA自带线程池：
+java提供自带的线程池，而不需要自己去开发一个自定义线程池了。
+
+线程池类ThreadPoolExecutor在包java.util.concurrent下
+ThreadPoolExecutor threadPool= new ThreadPoolExecutor(10, 15, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+第一个参数10 表示这个线程池初始化了10个线程在里面工作
+第二个参数15 表示如果10个线程不够用了，就会自动增加到最多15个线程
+第三个参数60 结合第四个参数TimeUnit.SECONDS，表示经过60秒，多出来的线程还没有接到活儿，就会回收，最后保持池子里就10个
+第四个参数TimeUnit.SECONDS 如上
+第五个参数 new LinkedBlockingQueue() 用来放任务的集合
+
+execute方法用于添加新的任务
+
+
+LOCK：
+Lock是一个接口，为了使用一个Lock对象，需要用到
+Lock lock = new ReentrantLock();
+与 synchronized (someObject) 类似的，lock()方法，表示当前线程占用lock对象，一旦占用，其他线程就不能占用了。
+与 synchronized 不同的是，一旦synchronized 块结束，就会自动释放对someObject的占用。 lock却必须调用unlock方法进行手动释放，
+为了保证释放的执行，往往会把unlock() 放在finally中进行。
+
+synchronized 是不占用到手不罢休的，会一直试图占用下去。
+与 synchronized 的钻牛角尖不一样，Lock接口还提供了一个trylock方法。
+trylock会在指定时间范围内试图占用，占成功了，就啪啪啪。 如果时间到了，还占用不成功，扭头就走~
+注意： 因为使用trylock有可能成功，有可能失败，所以后面unlock释放锁的时候，需要判断是否占用成功了，如果没占用成功也unlock,就会抛出异常
+
+使用synchronized方式进行线程交互，用到的是同步对象的wait,notify和notifyAll方法
+Lock也提供了类似的解决办法，首先通过lock对象得到一个Condition对象，然后分别调用这个Condition对象的：await, signal,signalAll 方法
+注意： 不是Condition对象的wait,nofity,notifyAll方法,是await,signal,signalAll
+
+ 总结Lock和synchronized的区别
+1. Lock是一个接口，而synchronized是Java中的关键字，synchronized是内置的语言实现，Lock是代码层面的实现。
+2. Lock可以选择性的获取锁，如果一段时间获取不到，可以放弃。synchronized不行，会一根筋一直获取下去。 借助Lock的这个特性，
+就能够规避死锁，synchronized必须通过谨慎和良好的设计，才能减少死锁的发生。
+3. synchronized在发生异常和同步块结束的时候，会自动释放锁。而Lock必须手动释放， 所以如果忘记了释放锁，一样会造成死锁。
+package multiplethread;
+
+import java.util.LinkedList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import charactor.Hero;
+
+public class MyStack {
+
+    LinkedList<Hero> heros = new LinkedList<Hero>();
+
+    Lock lock = new ReentrantLock();
+
+    //把synchronized去掉
+    public  void push(Hero h) {
+        try{
+            //使用lock占用锁
+            lock.lock();
+            heros.addLast(h);
+        }
+        finally{
+            //使用unlock释放锁
+            //必须放在finally执行，万一heros.addLast抛出异常也会执行
+            lock.unlock();
+        }
+
+    }
+
+    //把synchronized去掉
+    public  Hero pull() {
+        try{
+            //使用lock占用锁
+            lock.lock();
+            return heros.removeLast();
+        }
+        finally{
+            //使用unlock释放锁
+            //必须放在finally执行，万一heros.removeLast();抛出异常也会执行
+            lock.unlock();
+        }
+    }
+
+    public Hero peek() {
+        return heros.getLast();
+    }
+
+    public static void main(String[] args) {
+
+    }
+
+}

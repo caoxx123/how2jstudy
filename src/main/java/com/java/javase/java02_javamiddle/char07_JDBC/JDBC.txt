@@ -1,0 +1,79 @@
+JDBC (Java DataBase Connection) 是通过JAVA访问数据库
+CRUD是最常见的数据库操作，即增删改查
+C 增加(Create)
+R 读取查询(Retrieve)
+U 更新(Update)
+D 删除(Delete)
+和 Statement一样，PreparedStatement也是用来执行sql语句的
+与创建Statement不同的是，需要根据sql语句创建PreparedStatement
+除此之外，还能够通过设置参数，指定相应的值，而不是Statement那样使用字符串拼接
+注： 这是JAVA里唯二的基1的地方，另一个是查询语句中的ResultSet也是基1的。
+1、参数设置
+Statement 需要进行字符串拼接，可读性和维护性比较差
+String sql = "insert into hero values(null,"+"'提莫'"+","+313.0f+","+50+")";
+PreparedStatement 使用参数设置，可读性好，不易犯错
+String sql = "insert into hero values(null,?,?,?)";
+2、PreparedStatement有预编译机制，性能比Statement更快
+3、防止SQL注入式攻击
+假设name是用户提交来的数据
+String name = "'盖伦' OR 1=1";
+使用Statement就需要进行字符串拼接
+拼接出来的语句是：
+select * from hero where name = '盖伦' OR 1=1
+因为有OR 1=1，这是恒成立的
+那么就会把所有的英雄都查出来，而不只是盖伦
+如果Hero表里的数据时海量的，比如几百万条，把这个表里的数据全部查出来
+会让数据库负载变高，CPU100%，内存消耗光，响应变得极其缓慢
+而PreparedStatement使用的是参数设置，就不会有这个问题
+
+execute与executeUpdate的区别：
+execute与executeUpdate的相同点：都可以执行增加，删除，修改
+
+不同1：
+execute可以执行查询语句
+然后通过getResultSet，把结果集取出来
+executeUpdate不能执行查询语句
+不同2:
+execute返回boolean类型，true表示执行的是查询语句，false表示执行的是insert,delete,update等等
+executeUpdate返回的是int，表示有多少条数据受到了影响
+
+1 : 获取自增长id
+在Statement通过execute或者executeUpdate执行完插入语句后，MySQL会为新插入的数据分配一个自增长id，
+(前提是这个表的id设置为了自增长,在Mysql创建表的时候，AUTO_INCREMENT就表示自增长)
+CREATE TABLE hero (
+  id int(11) AUTO_INCREMENT,
+  ...
+}
+但是无论是execute还是executeUpdate都不会返回这个自增长id是多少。需要通过Statement的getGeneratedKeys获取该id
+注： 第20行的代码，后面加了个Statement.RETURN_GENERATED_KEYS参数，以确保会返回自增长ID。 通常情况下不需要加这个，
+有的时候需要加，所以先加上，保险一些
+PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
+ // 查看数据库层面的元数据
+            // 即数据库服务器版本，驱动版本，都有哪些数据库等等
+
+            DatabaseMetaData dbmd = c.getMetaData();
+
+            // 获取数据库服务器产品名称
+            System.out.println("数据库产品名称:\t"+dbmd.getDatabaseProductName());
+            // 获取数据库服务器产品版本号
+            System.out.println("数据库产品版本:\t"+dbmd.getDatabaseProductVersion());
+            // 获取数据库服务器用作类别和表名之间的分隔符 如test.user
+            System.out.println("数据库和表分隔符:\t"+dbmd.getCatalogSeparator());
+            // 获取驱动版本
+            System.out.println("驱动版本:\t"+dbmd.getDriverVersion());
+
+            System.out.println("可用的数据库列表：");
+            // 获取数据库名称
+            ResultSet rs = dbmd.getCatalogs();
+
+            while (rs.next()) {
+                System.out.println("数据库名称:\t"+rs.getString(1));
+            }
+  在事务中的多个操作，要么都成功，要么都失败
+  通过 c.setAutoCommit(false);关闭自动提交
+  使用 c.commit();进行手动提交
+  在22行-35行之间的数据库操作，就处于同一个事务当中，要么都成功，要么都失败
+  所以，虽然第一条SQL语句是可以执行的，但是第二条SQL语句有错误，其结果就是两条SQL语句都没有被提交。 除非两条SQL语句都是正确的。
+
+

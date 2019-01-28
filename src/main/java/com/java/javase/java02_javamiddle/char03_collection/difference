@@ -1,0 +1,12 @@
+ArrayList vs HashSet:
+1,ArrayList 有序 HashSet无序
+2、Arraylist 可以重复 HashSet不可以重复
+ArrayList vs LinkedList:
+1、Arraylist是顺序结构，所以查找快，插入删除慢，LinkedList不是顺序结构，易于插入删除
+HashMap vs HashTable:
+1、HashMap可以存放 null，Hashtable不能存放null。
+2、HashMap不是线程安全的，HashTable是线程安全的。
+几种Set:
+HashSet： 无序
+LinkedHashSet： 按照插入顺序
+TreeSet： 从小到大排序
